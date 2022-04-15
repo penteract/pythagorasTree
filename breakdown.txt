@@ -1,0 +1,31 @@
+Let A be the area of the whole tree.
+
+let O be the area of the intersection between the left subtree and right subtree(all of which occurs within a teardrop shaped region).
+
+A = 2*(A/2) - O + 1
+therefore O = 1
+
+Let B be the region between the branch of the tree which alternates
+Left,Right,Left,... and its mirror (Right,Left,Right,...). To make it include O, it includes the corners of squares which overlap with other brances (the corners have areas 1/8th of the relevant squares)
+
+A = 3 + 2*(7/8)+3*B
+14.35 <= A <= 14.63
+
+
+B can be split into a right isoceles triangle of squares, the largest of which has area S, another smaller (1/16 area) right isosceles triangle facing it (sharing the point of the right angle) with the same density as S, and a pair of trapesia. The trapezia together with half the small triangle occur in shrinking copies up to the edge.
+
+B = S*2 + (T+S/16)*2*4/3
+
+A corner of the trapesium can be rewritten in terms of other pieces, leaving a parallelogram (with area P):
+T = P + (7/8)*(1/64)*2 + (T+S/16)/16*2-(S/16)/16/2 + (3/2)*(1/64)
+
+The overlap measured by O occurs in S, (but not the smaller copies of S on the sides), in the shrunk reflection of S, (in proportion (1/16) to the occurence in S) and in T.
+
+B = k*2-1
+
+k = (B/4 + 1/8 + (1/16)*(7/8)*2)*2 + (1/4/8)
+
+teardrop:
+D = 2T+S+S/8
+D <= 2+1/4+7/64
+D >= O (=1)
