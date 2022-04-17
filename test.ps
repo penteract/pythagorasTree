@@ -1,0 +1,31 @@
+%!PS
+<< /PageSize [842 595] /MediaColor (white) >> setpagedevice
+(test
+) print
+% 1 printobject
+
+/pythag {
+0 0 moveto
+0 100 lineto
+100 100 lineto
+100 0 lineto
+closepath
+stroke
+dup 0 eq not {
+  gsave
+  0 100 translate
+  45 rotate
+  0.7071067811865476 dup scale
+  1 sub dup pythag
+  100 0 translate
+  -90 rotate
+  pythag
+  grestore
+  0
+} if
+pop
+} def
+250 0 translate
+10 pythag
+
+showpage

@@ -17,7 +17,7 @@ grid[6][3] = EMPTY
 # [6, 13, 20, 27]]
 FULL = grid[3][0]
 
-syms = {FULL:FULL, EMPTY:EMPTY, 10+(4*7):10}
+syms = {FULL:FULL, EMPTY:EMPTY}
 grids = [grid]
 for i in range(3):
     g=grids[-1]
@@ -57,15 +57,26 @@ for i in range(4):
     addEdge(cors[i],(i+1)%4,cors[i])
     addEdge(cors[i],(i+3)%4,cors[i])
 
+DRAWTRI=True
 #draw the squares of area 1/2
-addEdge(10,0,cors[1])
-addEdge(10,1,cors[0])
-addEdge(10,2,cors[3])
-addEdge(10,3,cors[2])
-addEdge(9,3,cors[2])
-addEdge(9,2,cors[3])
-addEdge(11,0,cors[1])
-addEdge(11,1,cors[0])
+if DRAWTRI:
+    addEdge(10,0,FULL)
+    addEdge(10,1,cors[0])
+    addEdge(10,2,cors[3])
+    addEdge(10,3,FULL)
+    addEdge(9,3,cors[2])
+    addEdge(9,2,FULL)
+    addEdge(11,0,cors[1])
+    addEdge(11,1,FULL)
+else:
+    addEdge(10,0,cors[1])
+    addEdge(10,1,cors[0])
+    addEdge(10,2,cors[3])
+    addEdge(10,3,cors[2])
+    addEdge(9,3,cors[2])
+    addEdge(9,2,cors[3])
+    addEdge(11,0,cors[1])
+    addEdge(11,1,cors[0])
 
 
 dxdyToCor = {(0,0):0,(0,1):1,(1,1):2,(1,0):3}
@@ -86,7 +97,7 @@ addCopy(grids[3],1,0)
 
 for i in range(3):
     for ID in sum(grids[i],[]):
-        if ID not in [FULL,EMPTY,38] and (ID,i)!=(10,2) :
+        if ID not in [FULL,EMPTY] :
             for cr,l in enumerate(edges[ID]):
                 rot = rotate(ID,1)
                 if edges[rot][(cr+1)%4]:
@@ -212,4 +223,89 @@ def drawAll(depth):
 if __name__=="__main__":
     import sys
     if len(sys.argv)==2: drawAll(int(sys.argv[1]))
-i=0;print(sum(sqArea([c],i)[0] for r in grids[0] for c in r)/(1<<(2*(i+1))) )
+
+def reflect(ID):
+    """reflect across a vertical axis"""
+    special = {EMPTY:EMPTY, cors[0]:cors[3],cors[3]:cors[0],cors[1]:cors[2],cors[2]:cors[1]}
+    if ID in special: return special[ID]
+    (q,r) = divmod(ID,(4*7))
+    y,x = divmod(r,7)
+    return rotate(7*y+(6-x) ,-q)
+def canonical(IDs):
+    if area(list(IDs))==(4,4):
+        return (FULL,)
+    rots = [sorted(rotate(ID,n) for ID in ids) for n in range(4) for ids in [IDs,list(map(reflect,IDs))]]
+    #for x in rots: print(x)
+    return tuple(min(rots))
+
+def hedges(IDs):
+    return tuple(canonical(merge(*(edges[ID][i] for ID in IDs))) for i in range(4))
+
+seen = set()
+l=[canonical([c]) for r in grids[0] for c in r if c!=-1]
+eMap={}
+for IDs in l:
+    if IDs not in eMap:
+        eMap[IDs] = hedges(IDs)
+        for nxt in eMap[IDs]:
+            if nxt not in seen:
+                seen.add(nxt)
+                l.append(nxt)
+print(len(seen),len(l),len(eMap))
+
+import sympy
+def var(tup):
+    return sympy.var("x_"+"_".join(map(str,tup)))
+print("constructing a system of linear equations")
+eqns = [
+    var(can)*4 - sum(var(x) for x in eMap[can] if len(x))
+    for can in eMap
+    ]+[var((3,))-1]
+from sympy.solvers.solveset import linsolve
+IDs = list(eMap)
+rIDs = {t:ix for ix,t in enumerate(IDs)}
+print("solving system of linear equations")
+res = linsolve(eqns,list(map(var,IDs)))
+print("number of solutions: ",len(res))
+res=list(res)[0]
+print("The exact answer (a ratio):", sol:=sum(res[rIDs[canonical([c])]] for r in grids[0] for c in r if c!=-1))
+#Should print: 12823413011547414368862997525616691741041579688920794331363953564934456759066858494476606822552437442098640979/877512406035620068631903180662851572553488753575243048137500508983979170248733422547196905684808937723408093
+print("Aproximate value as a decimal:",float(sol))
+#Should print: 14.613369478706703
+
+def toBitmap(IDs,depth):
+    """return a list of byteStrings that can be made into a bitmap"""
+    if depth==0:
+        c = res[rIDs[canonical(IDs)]]
+        ## Doing this sRGB is technically more correct (I think it's closer to what you
+        ## would see with bad eyesight at a distance from a higher resolution monitor showing a more detailed image)
+        ## but is less informative because it makes it harder to percive differences in brightness
+        ## among pixels with values between 0.5 and 1 (I suspect that most pixels which are neither full nor empty lie in this interval)
+        #if c==1:
+        #    return [b"\xff"]
+        #srgb = 1.055*(c**(1/2.4)) - 0.055 if c>0.0031308 else 12.92*c
+        #return [bytes([int(srgb*255)])]
+        return [bytes([ int(res[rIDs[canonical(IDs)]]*255) ])]
+    else:
+        return (
+            list(map(op.add, toBitmap(list(merge(*(edges[ID][1] for ID in IDs if ID!=-1))),depth-1),
+                        toBitmap(list(merge(*(edges[ID][2] for ID in IDs if ID!=-1))),depth-1)))
+            +list(map(op.add, toBitmap(list(merge(*(edges[ID][0] for ID in IDs if ID!=-1))),depth-1),
+                        toBitmap(list(merge(*(edges[ID][3] for ID in IDs if ID!=-1))),depth-1)))
+            )
+
+def saveBitmap(depth,fileName):
+    #res=[]
+    from PIL import Image
+    img = Image.frombytes("L",(7*2**depth,4*2**depth),
+                        b"".join(
+                            itertools.chain(*(map((lambda *args:b"".join(args)),
+                                                 *(toBitmap([grids[0][x][y]],depth) for x in range(7)))
+                                              for y in range(3,-1,-1) )) ))
+    img.save(fileName)
+
+"""
+for i in [10,13,15,17,19,20]:
+    # starting with i=20 is much slower
+    print(sum(sqArea([c],i)[0] for r in grids[0] for c in r)/(1<<(2*(i+1))) )
+"""
