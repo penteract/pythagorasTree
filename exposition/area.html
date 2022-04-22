@@ -381,13 +381,14 @@ assert=function(x){if(!x)throw "assertion failed"}
 assert(reflect("tl")=="tr")
 assert(reflect("-3,2L")=="3,2R")
 
-function cannon(x){
+function canon(x){
   if (x.indexOf("F")!=-1) return ["F"]
   if (x.indexOf("0,0")!=-1) return ["F"]
   if (x.indexOf("tl")!=-1 && x.indexOf("br")!=-1) return ["F"]
   if (x.indexOf("bl")!=-1 && x.indexOf("tr")!=-1) return ["F"]
   x.sort()
   x=x.filter((e, i) => e !== x[i - 1])
+  x=x.filter((e,i)=> !e.match(/3,3/))
   mn=x;
   for(let j of [0,1]){
     for(let i of [0,1,2,3]){
@@ -407,7 +408,7 @@ function explore(ns){
       for(let n of ns){
         result=merge(result,edges[n][l])
       }
-      let can = cannon(result)
+      let can = canon(result)
       explore(can)
       dgraph[k][l]=can
     }
@@ -420,14 +421,26 @@ for(let x=-3;x<=3;x++)for(let y=0;y<=3;y++){
 </script>
 This representation is easy to convert into a system of linear equations, which then need to be solved
 <script id="solvelin">
+console.log("test")
+function fastlog(n){
+  ((n+"").length*10)/3
+}
+
+
 function gcd(a,b){
   if(a>b) [a,b]=[b,a]
-  while(a>0){
-    let r=b%a
-    b=a
-    a=r
-  }
-  return b
+  //if (a<(1n<<60n)){
+    while(a>0){
+      let r=b%a
+      b=a
+      a=r
+    }
+    return b
+  //}
+  //else{
+  //  lowb = BigInt(0|(fastlog(a)/2))
+    
+  //}
 }
 function norm(a,b){
   let g = gcd(a,b)
@@ -442,28 +455,30 @@ function sub(p,q){
 function mul(p,q){
   return norm(p[0]*q[0],p[1]*q[1])
 }
+function mulN(p,q){
+  return [p[0]*q[0],p[1]*q[1]]
+}
 
-fromID = Object.keys(dgraph).filter(k=>k!="")
-toID = {}
-fromID.map((e,i)=>toID[e]=i)
+ks = Object.keys(dgraph).filter(k=>k!="")
+//fromID = Object.keys(dgraph).filter(k=>k!="")
+//toID = {}
+//fromID.map((e,i)=>toID[e]=i)
 
 // 4*a == sum(b*sys[a][b][0]/sys[a][b][1] for b in sys[a])
-sys = [] // system of linear equations. 
-rev = [] //dict of sets giving the reverse map to sys
-for(let k of fromID){
-  rev.push({})
-  sys.push({})
+sys = {} // system of linear equations.
+rev = {} //dict of sets giving the reverse map to sys
+for(let k of ks){
+  rev[k]={}
+  sys[k]={}
 }
-for(let k of fromID){
+for(let k of ks){
   for(let l in dgraph[k]){
     let v = dgraph[k][l].join(";")
     if(v!=""){// the empty list has no area
-      let kID = toID[k]
-      v = toID[v]
-      if(sys[kID][v]===undefined) sys[kID][v]=[1n,1n]
-      else sys[kID][v][0] += 1n // works because all denominators are 1 for now
-      if(rev[v]===undefined)console.log(kID,v)
-      rev[v][kID]=true
+      if(sys[k][v]===undefined) sys[k][v]=[1n,1n]
+      else sys[k][v][0] += 1n // works because all denominators are 1 for now
+      if(rev[v]===undefined)console.log(k,v)
+      rev[v][k]=true
     }
   }
 }
@@ -491,24 +506,51 @@ function remove(v){
         sysu[k] = mul(res[k],cv)
         rev[k][u] = true
       }
-      else sysu[k] = add(ck,mul(res[k],cv))
+      else sysu[k] = add(ck,mulN(res[k],cv))
     }
   }
 }
 function sz(k){
   return Object.keys(rev[k]).length*Object.keys(sys[k]).length
 }
-
-ks = fromID.map((e,i)=>i).sort((a,b) => sz(a) - sz(b))
-if(true){
+toBeRemoved = Object.keys(sys).filter(i=>i!="F").sort((a,b) => sz(a) - sz(b))
+console.log("hi")
+if(false){
   startt=new Date()
-  i=0
-  for (let k of ks) if(k!=toID["F"]){
-    i+=1
-    if(i>1650)break;
-    remove(k)
+  removed=[]
+  while(toBeRemoved.length>0){
+    let i=0
+    while(i< toBeRemoved.length/3){
+      remove(toBeRemoved[i++])
+      if(toBeRemoved.length-i<100)console.log(toBeRemoved.length-i,(new Date()) - startt)
+      //if(toBeRemoved.length-i<90)break
+    }
+    removed=removed.concat(toBeRemoved.slice(0,i))
+    toBeRemoved=toBeRemoved.slice(i).sort((a,b) => sz(a) - sz(b))
+    console.log(toBeRemoved.length,(new Date()) - startt)
+    //if(toBeRemoved.length<90)break;
   }
-  console.log((new Date()) - startt)
+  //results = Object.assign({}, results);
+  remd = removed.map(x=>x)
+  finalResults={}
+  remd.reverse()
+  for(let n of remd){
+    let tot = [0n,1n]
+    for(let k in results[n]){
+      if(k=="F") tot = add(tot,results[n][k])
+      else tot = add(tot,mulN (results[n][k],finalResults[k]))
+    }
+    finalResults[n]=tot
+  }
+  finalResults["F"]=[1n,1n]
+  // make the final total
+  tot = [0n,1n]
+  for(let x=-3;x<=3;x++)for(let y=0;y<=3;y++){
+    let can = canon([[x,y]+""])
+    if(can!="")
+      tot = add(tot, finalResults[canon([[x,y]+""]).join(";")])
+  }
+  console.log(tot)
 }
 
 </script>
