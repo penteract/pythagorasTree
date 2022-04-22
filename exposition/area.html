@@ -80,11 +80,11 @@ Let d<sub>0</sub> be the transformation which rotates 45 degrees anticlockwise a
 and let d<sub>1</sub> be the transformation which rotates 45 degrees clockwise and scales by 1/√2 centered on (2,1).
 </p>
 <p>
-We define the <b>depth 1 rendering</b> of the Pythagoras tree to consist of an open unit square with corners at (0,0) and (1,1), and the depth n+1 rendering to consist of 2 copies of the depth n rendering transformed by d<sub>0</sub> and d<sub>1</sub> together with the unit square of the depth 1 rendering. This gives the arrangement described in Sec. \ref{sec:intro}. The Pythagoras tree is the union of the set of finite depth renderings.
+Define the <b>depth 1 rendering</b> of the Pythagoras tree to consist of an open unit square with corners at (0,0) and (1,1), and the depth n+1 rendering to consist of 2 copies of the depth n rendering transformed by d<sub>0</sub> and d<sub>1</sub> together with the unit square of the depth 1 rendering. This gives the arrangement described in Sec. \ref{sec:intro}. The Pythagoras tree is the union of the set of finite depth renderings.
 </p>
 
 <p>
-We set out to find the exact area of the Pythagoras tree, which we will denote A. A is the limit of the sequence of the areas of the finite depth renderings.
+Our goal is to find the exact area of the Pythagoras tree, which we will denote A. A is the limit of the sequence of the areas of the finite depth renderings.
 This sequence starts 1, 2, 3, 4, 5, 5 <sup>15</sup>/<sub>16</sub>, 6 <sup>53</sup>/<sub>64</sub>,... . The limit of this monotone sequence exists since it is bounded above by the area of a 7x4 rectangle which no part of the shape leaves.
 </p>
 <svg id=depthssvg viewBox="-3.4 0 7.8 4" style="transform:scaleY(-1)">
@@ -209,7 +209,7 @@ draw(grd + trees + letters)
 // drawMany(2,`<rect style="opacity:0.5;fill:blue" x=0 y=0 width=1 height=1 />`))
 
 </script>
-<p>The tree may be divided into 28 squares in a 7x4 grid so that the largest square in the tree exactly fills one square of the grid. The 4 copies described above are nicely aligned to a subdivision of the grid, allowing each square of the grid to be described as it 4 corners, each of which is either full, empty, a triangle, or an overlapping combination of squares of the original grid and their rotations. This lets us construct a non-deterministic automaton describing the shape. For example, the cell labeled B has tl-transitions to the cells C and W, tr-transitions to D and X, bl-transitions to E and Y and br-transitions to the cells F and Z. The transitions to C,D,E and F come from the yellow subtree and those labeled W,X,Y and Z come from the orange subtree.</p>
+<p>The tree may be divided into 28 squares in a 7x4 grid so that the largest square in the tree exactly fills one square of the grid. The 4 copies described above are nicely aligned to a subdivision of the grid, allowing each square of the grid to be described in terms of its 4 corners, each of which is either full, empty, a triangle, or an overlapping combination of squares of the original grid and their rotations. This lets us construct a non-deterministic automaton describing the shape. For example, the cell labeled B has tl-transitions to the cells C and W, tr-transitions to D and X, bl-transitions to E and Y and br-transitions to the cells F and Z. The transitions to C,D,E and F come from the yellow subtree and those labeled W,X,Y and Z come from the orange subtree.</p>
 
 <p>As rotations can be multiples of 90°, we need 4 states needed for each of the 28 original cells. For example, the cell labeled Y has a tr-transition to a state corresponding to Z rotated 90° clockwise.  The transitions from rotations are straightforward given the transitions from the originals. This gives a nondeterministic automaton with 4x28+4+1=117 states (the initial 28, their rotations, 4 triangles and 1 full square). This can be transformed into a deterministic automaton with 2<sup>116</sup>+1 states, but fortunately not all of them are needed. Instead we can start from the 28 singleton sets representing squares of the grid and discover that ~10000 states are reachable from those, which can be reduced to ~1000 by accounting for rotations and reflections.</p>
 
@@ -219,7 +219,7 @@ draw(grd + trees + letters)
 Noting that the area of the closure of the Pythagoras tree would also be a solution to that system of linear equations, the fact that it has a unique solution implies that taking the closure does not change the area.</p>
 
 <h2>Details of the calculation</h2>
-<p>Firstly, here's the transition diagram for transitions, with the color of edges indicating which of the 4 subtrees the edge came from. The central nodes indicate the full node and the </p>
+<p>Firstly, here's the transition diagram, with the color of edges indicating which of the 4 subtrees the edge came from. The central nodes indicate the full node and the 4 triangles. </p>
 <svg id=graphsvg viewBox="-7 -13.4 15 17.8">
 </svg>
 <script type="text/javascript" id="graph">
@@ -247,15 +247,26 @@ for(let i of [0,1,2,3]){
   edgs+=edge(c,c,corners[(i+3)%4])
 }
 // draw the depth 2 squares as 4 triangles each
-edgs+=edge("-1,1","br","tr")
+// toggling comments on the lines marked (*)
+// instead creates the graph for the case where
+// the triangle between a square and the subtrees
+// resting on it is filled in.
+edgs+=edge("-1,1","br","tr") // *
+//edgs+=edge("-1,1","F","tr") // *
 edgs+=edge("-1,1","tr","br")
-edgs+=edge("0,1","bl","tl")
-edgs+=edge("0,1","tl","bl")
 
+edgs+=edge("0,1","bl","tl")
+edgs+=edge("0,1","tl","bl") // *
+//edgs+=edge("0,1","F","bl") // *
 edgs+=edge("0,1","br","tr")
-edgs+=edge("0,1","tr","br")
-edgs+=edge("1,1","bl","tl")
-edgs+=edge("1,1","tl","bl")
+edgs+=edge("0,1","tr","br") // *
+//edgs+=edge("0,1","F","br") // *
+
+edgs+=edge("1,1","bl","tl") // *
+//edgs+=edge("1,1","F","tl") // *
+edgs+=edge("1,1","tl","bl") 
+
+
 
 ns2 = drawNodes()
 
@@ -322,7 +333,7 @@ allNodes = ns2+`<g transform="rotate(90 0.5 -4)">${ns}</g>`+
 draw("<g stroke=black>"+edgs+allNodes+"</g>")
 </script>
 
-Now we show all the transitions, including ones from rotated copies of the original and with edges colored according to the label
+Now we show all the transitions, including ones from rotated copies of the original and with edges colored according to the label associated with that edge.
 <svg id=fullgraphsvg viewBox="-7 -13.4 15 17.8">
 </svg>
 <script type="text/javascript" id="fullgraph">
@@ -335,37 +346,12 @@ for(let l of corners){s+=`<g stroke=${["red","orange","green","blue"][corners.in
 }
 draw(s+"<g stroke=black>"+allNodes+"</g>")
 </script>
-<p> We now turn this non-deterministic automaton into a deterministic one. Since it would take a bit too long to make the graph of all 2<sup>117</sup> nodes, we'll do a depth-first search exploring the ones reachable from the starting 28</p>
+<p> We now turn this non-deterministic automaton into a deterministic one. Since it would take a bit too long to make the graph of all 2<sup>117</sup> nodes, we'll do a depth-first search exploring the ones reachable from the starting 28. Because rotating and reflecting of a square doesn't change the area, we can reduce the number of states by choosing a canonical example for each set of equivalent nodes.</p>
 <script id="dgraph">
 for(let n in edges)for(let l in edges[n]){
   edges[n][l].sort()
 }
 dgraph = {}
-function merge(l1,l2){
-  //merge 2 sorted lists with no duplicates into 1
-  let res=[]
-  let i1=0; let i2=0
-  while(i1<l1.length && i2<l2.length){
-    let v
-    if(l1[i1]<l2[i2]){
-      v=l1[i1++]
-    }else{
-      v=l2[i2++]
-    }
-    if(res.length==0 || res[res.length-1]!=v){
-      res.push(v)
-    }
-  }
-  while(i1<l1.length){
-    let v=l1[i1++]
-    if(res.length==0 || res[res.length-1]!=v) res.push(v)
-  }
-  while(i2<l2.length){
-    let v=l2[i2++]
-    if(res.length==0 || res[res.length-1]!=v) res.push(v)
-  }
-  return res
-}
 function reflect(n){// reflect a node across the vertical axis
   if(n=="F") return "F"
   if((j=corners.indexOf(n))!=-1) return corners[3-j]
@@ -406,7 +392,7 @@ function explore(ns){
     for(let l of corners){
       let result = []
       for(let n of ns){
-        result=merge(result,edges[n][l])
+        result = result.concat(edges[n][l])
       }
       let can = canon(result)
       explore(can)
@@ -419,28 +405,26 @@ for(let x=-3;x<=3;x++)for(let y=0;y<=3;y++){
 }
 
 </script>
-This representation is easy to convert into a system of linear equations, which then need to be solved
+<p>This representation is easy to convert into a system of linear equations, which then need to be solved.
+</p>
 <script id="solvelin">
 console.log("test")
 function fastlog(n){
   ((n+"").length*10)/3
 }
 
-
 function gcd(a,b){
+  // Euclid's algorithm for GCD.
+  // This is not optimal given the sizes of numbers involved,
+  // but writing a better algorithm in js would need a lot
+  // more code
   if(a>b) [a,b]=[b,a]
-  //if (a<(1n<<60n)){
-    while(a>0){
-      let r=b%a
-      b=a
-      a=r
-    }
-    return b
-  //}
-  //else{
-  //  lowb = BigInt(0|(fastlog(a)/2))
-    
-  //}
+  while(a>0){
+    let r=b%a
+    b=a
+    a=r
+  }
+  return b
 }
 function norm(a,b){
   let g = gcd(a,b)
@@ -483,7 +467,8 @@ for(let k of ks){
   }
 }
 results={}
-function remove(v){
+function removeVar(v){
+  // Remove a variable from the system of linear equations
   let eqn = sys[v]
   let fac = [4n,1n]
   if(eqn[v]!==undefined) fac=sub(fac,eqn[v])
@@ -513,15 +498,16 @@ function remove(v){
 function sz(k){
   return Object.keys(rev[k]).length*Object.keys(sys[k]).length
 }
-toBeRemoved = Object.keys(sys).filter(i=>i!="F").sort((a,b) => sz(a) - sz(b))
-console.log("hi")
+toBeRemoved = Object.keys(sys).filter(i=>i!="F").sort((a,b) => sz(a) - sz(b))</script>
+<p>Unfortuately, it takes a while (20-30 seconds on my machine) to solve this system of linear equations. If you want to confirm the result for yourself, change the first line of the script below from "if(false){" to "if(true){" and run it. The result is logged to the browser console. Alternatively, get the Python code from <a href="https://github.com/penteract/pythagorasTree/blob/master/automaton.py">here</a>, which uses SymPy for solving the system of linear equations and takes about a second to run. </p>
+<script id=result>
 if(false){
   startt=new Date()
   removed=[]
   while(toBeRemoved.length>0){
     let i=0
-    while(i< toBeRemoved.length/3){
-      remove(toBeRemoved[i++])
+    while(i< toBeRemoved.length/200){
+      removeVar(toBeRemoved[i++])
       if(toBeRemoved.length-i<100)console.log(toBeRemoved.length-i,(new Date()) - startt)
       //if(toBeRemoved.length-i<90)break
     }
@@ -550,11 +536,25 @@ if(false){
     if(can!="")
       tot = add(tot, finalResults[canon([[x,y]+""]).join(";")])
   }
-  console.log(tot)
+  console.log("Final result (a ratio)","\n"+tot[0]+"\n/\n"+tot[1])
 }
 
 </script>
 
+<h2></h2>
+
+<h2>Other Results</h2>
+<p>This method can also be used to calculate the area of the Pythagoras Tree with the triangles between a node and the subtrees growing from it filled in:
+<table style="text-align:center;"><tbody>
+<tr><td style="border-bottom:2px solid black;">80605706690966227797244468721167282379053 </td></tr>
+<tr><td>5025557197283613113718784555470007578789</td></tr></tbody></table>
+This is noticably easier to compute.</p>
+
+<p>With a few more changes, we can compute the area of the C dragon (9/4 if drawn to match the Pythagoras tree, 1/4 if scaled so that the ends are 1 unit apart). I assume the area of the C dragon has already been found by someone else (it would be very obvious from computing approximations).
+</p>
+
+
+<h2>Footnotes</h2>
 
 <h3 id="fn:automata">Footnote: Automata</h3>
 <p>Technically we're using <a href="https://en.wikipedia.org/wiki/ω-automaton">ω-automata</a>, which accept or reject infinte strings (F is the only accepting state, and every path that reaches it stays there forever, so we don't need a very fancy acceptance condition).</p>
