@@ -57,7 +57,7 @@ for i in range(4):
     addEdge(cors[i],(i+1)%4,cors[i])
     addEdge(cors[i],(i+3)%4,cors[i])
 
-DRAWTRI=True
+DRAWTRI=False
 #draw the squares of area 1/2
 if DRAWTRI:
     addEdge(10,0,FULL)
