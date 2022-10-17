@@ -4,9 +4,10 @@ import itertools
 #(bottom left is (0,0))
 grid = [[y*7+x for y in range(4)] for x in range(7)]
 
-EMPTY=-1
-grid[0][3] = EMPTY
-grid[6][3] = EMPTY
+#EMPTY=-1
+#grid[0][3] = EMPTY
+#grid[6][3] = EMPTY
+#grid[3][0] = EMPTY
 
 #[[0, 7, 14, 21],
 # [1, 8, 15, 22],
@@ -15,27 +16,21 @@ grid[6][3] = EMPTY
 # [4, 11, 18, 25],
 # [5, 12, 19, 26],
 # [6, 13, 20, 27]]
-FULL = grid[3][0]
+#FULL = grid[3][0]
 
-syms = {FULL:FULL, EMPTY:EMPTY}
+#syms = {EMPTY:EMPTY}
+syms={}
 grids = [grid]
 for i in range(3):
     g=grids[-1]
     ng = list(zip(*reversed(g)))
     grids.append ([[ syms[x] if x in syms else x+(4*7) for x in r] for r in ng])
 
-#cors[0] is a triangle covering the lower left half of a square
-#21 is used since it's empty
-cors =[21,21+7*4,21+7*4*2,21+7*4*3]
-
 edges = {}
 for rot in grids:
     for col in rot:
         for ID in col:
-            if ID!=EMPTY:
-                edges[ID] = ([],[],[],[])
-for cor in cors:
-    edges[cor]=([],[],[],[])
+            edges[ID] = ([],[],[],[])
 
 def addEdge(frm,cor,to):
     #print(frm,cor,to)
@@ -49,41 +44,11 @@ def rotate(ID,n):
     else:
         return rotate(syms[ID] if ID in syms else (ID+(4*7))%(4*4*7),n-1)
 
-for i in range(4):
-    addEdge(FULL,i,FULL)
-#describe how triangles work
-for i in range(4):
-    addEdge(cors[i],i,FULL)
-    addEdge(cors[i],(i+1)%4,cors[i])
-    addEdge(cors[i],(i+3)%4,cors[i])
-
-DRAWTRI=False
-#draw the squares of area 1/2
-if DRAWTRI:
-    addEdge(10,0,FULL)
-    addEdge(10,1,cors[0])
-    addEdge(10,2,cors[3])
-    addEdge(10,3,FULL)
-    addEdge(9,3,cors[2])
-    addEdge(9,2,FULL)
-    addEdge(11,0,cors[1])
-    addEdge(11,1,FULL)
-else:
-    addEdge(10,0,cors[1])
-    addEdge(10,1,cors[0])
-    addEdge(10,2,cors[3])
-    addEdge(10,3,cors[2])
-    addEdge(9,3,cors[2])
-    addEdge(9,2,cors[3])
-    addEdge(11,0,cors[1])
-    addEdge(11,1,cors[0])
-
 
 dxdyToCor = {(0,0):0,(0,1):1,(1,1):2,(1,0):3}
 # Add the 4 subtrees 1/4 of the area
 def insertCorner(x,y,ID):
-    if ID != EMPTY:
-        addEdge(grids[0][x//2][y//2],dxdyToCor[x%2,y%2],ID)
+    addEdge(grids[0][x//2][y//2],dxdyToCor[x%2,y%2],ID)
 
 def addCopy(gr,sx,sy):
     """Add a copy of the grid with lower left at position (sx/2,sy/2)"""
@@ -97,14 +62,13 @@ addCopy(grids[3],1,0)
 
 for i in range(3):
     for ID in sum(grids[i],[]):
-        if ID not in [FULL,EMPTY] :
-            for cr,l in enumerate(edges[ID]):
-                rot = rotate(ID,1)
-                if edges[rot][(cr+1)%4]:
-                    print(ID,rot,cr,edges[rot][(cr+1)%4])
-                assert not edges[rot][(cr+1)%4]
-                for t in l:
-                    addEdge(rot,(cr+1)%4,rotate(t,1))
+        for cr,l in enumerate(edges[ID]):
+            rot = rotate(ID,1)
+            if edges[rot][(cr+1)%4]:
+                print(ID,rot,cr,edges[rot][(cr+1)%4])
+            assert not edges[rot][(cr+1)%4]
+            for t in l:
+                addEdge(rot,(cr+1)%4,rotate(t,1))
 
 for quad in edges:
     for es in edges[quad]:
@@ -145,28 +109,10 @@ def merge(*args):
 Zs=0
 def area(IDs):
     """Given a list of IDs, return a lower bound and upper bound for the area of the region times 4"""
-    if IDs==[-1]:
-        return (0,0)
-    if FULL in IDs:
-        return (4,4)
-    cs=[]
-    for i in range(len(IDs)-1,-1,-1):
-        if IDs[i] in cors:
-            cs.append(IDs.pop(i))
-    a=0
-    if len(cs)>2:
-        a=4
-    elif len(cs)==1:
-        a=2
-    elif len(cs)==2:
-        if abs(cs[0]-cs[1])==7*4*2:
-            a=4
-        else:
-            a=3
     if len(IDs)==0:
-        return (a,a)
+        return (4,4)
     else:
-        return (a,4)
+        return (0,4)
 
 cache = {}
 def cash(f):
@@ -186,8 +132,6 @@ def cash(f):
 
 @cash
 def sqArea(IDs,depth):
-    if IDs==[-1]:
-        return (0,0)
     a,b = area(list(IDs) if depth>0 else IDs)
     if depth==0 or a==b:
         return (a<<2*depth,b<<2*depth)
@@ -211,10 +155,10 @@ def draw(IDs,depth):
             return ["+"]
     else:
         return (
-            list(map(op.add, draw(list(merge(*(edges[ID][1] for ID in IDs if ID!=-1))),depth-1),
-                        draw(list(merge(*(edges[ID][2] for ID in IDs if ID!=-1))),depth-1)))
-            +list(map(op.add, draw(list(merge(*(edges[ID][0] for ID in IDs if ID!=-1))),depth-1),
-                        draw(list(merge(*(edges[ID][3] for ID in IDs if ID!=-1))),depth-1)))
+            list(map(op.add, draw(list(merge(*(edges[ID][1] for ID in IDs))),depth-1),
+                        draw(list(merge(*(edges[ID][2] for ID in IDs))),depth-1)))
+            +list(map(op.add, draw(list(merge(*(edges[ID][0] for ID in IDs))),depth-1),
+                        draw(list(merge(*(edges[ID][3] for ID in IDs))),depth-1)))
             )
 
 def drawAll(depth):
@@ -226,15 +170,18 @@ if __name__=="__main__":
 
 def reflect(ID):
     """reflect across a vertical axis"""
-    special = {EMPTY:EMPTY, cors[0]:cors[3],cors[3]:cors[0],cors[1]:cors[2],cors[2]:cors[1]}
-    if ID in special: return special[ID]
     (q,r) = divmod(ID,(4*7))
     y,x = divmod(r,7)
     return rotate(7*y+(6-x) ,-q)
+
+empties = [rotate(grids[0][x][y],i) for i in range(4) for x,y in [(0,3),(6,3),(3,0),(3,1)]]
+
 def canonical(IDs):
+    #return tuple(IDs)
+    IDs = list(ID for ID in IDs if ID not in empties)
     if area(list(IDs))==(4,4):
-        return (FULL,)
-    rots = [sorted(rotate(ID,n) for ID in ids) for n in range(4) for ids in [IDs,list(map(reflect,IDs))]]
+        return tuple()
+    rots = [sorted(rotate(ID,n) for ID in ids if ID not in empties) for n in range(4) for ids in [IDs,list(map(reflect,IDs))]]
     #for x in rots: print(x)
     return tuple(min(rots))
 
@@ -242,7 +189,7 @@ def hedges(IDs):
     return tuple(canonical(merge(*(edges[ID][i] for ID in IDs))) for i in range(4))
 
 seen = set()
-l=[canonical([c]) for r in grids[0] for c in r if c!=-1]
+l=list(set(canonical([c]) for r in grids[0] for c in r))
 eMap={}
 for IDs in l:
     if IDs not in eMap:
@@ -253,30 +200,159 @@ for IDs in l:
                 l.append(nxt)
 print(len(seen),len(l),len(eMap))
 
+    
+def uget(a,ufds):
+    while a!=(a:=ufds[a]):
+        pass
+    return a
+
+def findCCs(g):
+    components = []
+    bestNodes = [None]
+    seen = set()
+    ufds = {}
+    def uget(a):
+        while a!=(a:=ufds[a]):
+            pass
+        return a
+    #def union(a,b):
+    #    a=uget(a)
+    #    while b!=ufds[b]:
+    #        b,ufds[b] = ufds[b],a
+    #    ufds[b] = a
+    for node in g:
+        ufds[node]=node
+    for node in g:
+        if node in seen:
+            continue
+        edgs = list(g[node])
+        path = [(node,edgs)] #path to current node
+        pathSet = {node}
+        seen.add(node)
+        
+        while path:
+            n,es = path[-1]
+            if not es:
+                if ufds[n]==n:
+                    components.append(n)
+                path.pop()
+                pathSet.remove(n)
+                continue
+            nxt = es.pop()
+            target = uget(nxt) # target is the earliest on the path that we know is in the SCC
+            if target in pathSet:
+                i = len(path)-1
+                while uget(path[i][0]) != target:
+                    ufds[path[i][0]]=target
+                    i-=1
+            elif nxt in seen:
+                continue
+            else:
+                seen.add(nxt)
+                pathSet.add(nxt)
+                path.append((nxt,list(g[nxt])))
+    return components,ufds
+
+
+
+
+
 import sympy
 def var(tup):
     return sympy.var("x_"+"_".join(map(str,tup)))
 print("constructing a system of linear equations")
 eqns = [
-    var(can)*4 - sum(var(x) for x in eMap[can] if len(x))
+    var(can)*4 - sum(var(x) for x in eMap[can])
     for can in eMap
-    ]+[var((3,))-1]
+    ]+[var(())-1]
 from sympy.solvers.solveset import linsolve
 IDs = list(eMap)
 rIDs = {t:ix for ix,t in enumerate(IDs)}
+
+
 print("solving system of linear equations")
-res = linsolve(eqns,list(map(var,IDs)))
-print("number of solutions: ",len(res))
+varList = list(map(var,IDs))
+res = linsolve(eqns,varList)
+#print("number of solutions: ",len(res))
 res=list(res)[0]
-print("The exact answer (a ratio):", sol:=sum(res[rIDs[canonical([c])]] for r in grids[0] for c in r if c!=-1))
+#print("The exact answer (with a free variable):", sol:=28-sum(res[rIDs[canonical([c])]] for r in grids[0] for c in r))
+
+rgs = [(i,res[i].args) for i,x in enumerate(IDs) if len(res[i].args)==2]
+minv,mini = min((args[0],i) for i,args in rgs)
+#print(res[mini])
+eqns.append(res[mini])
+res = linsolve(eqns,varList)
+print("solving another linear equations")#this could be avoided since we've already done the work
+#print("number of solutions: ",len(res))
+res=list(res)[0]
+print("The exact area of the Levy dragon:", sol:=28-sum(res[rIDs[canonical([c])]] for r in grids[0] for c in r))
+#print("The exact answer as a decimal",float(sol))
+#print(minv,mini)
+
+# Work out dimension
+comps,ufds = findCCs(eMap)
+dd = {c:[x for x in ufds if uget(x,ufds)==c] for c in comps}
+
+def iterate(mp, d = 2, N = 1000):
+    omp = mp
+    tst = next(iter(mp))
+    for i in range(N):
+        mp = { k : sum(mp[ch] for ch in eMap[k] if ch in mp)/(2**d) for k in mp}
+        sgn = mp[tst]>=omp[tst]
+        for k in mp:
+            if (mp[k]>=omp[k])!=sgn:
+                break
+        else:
+            return sgn,mp,i
+    return (None,mp,N)
+
+mp = {k:1 for k in dd[7,]} # using the area (1-res[rIDs[k]]) is not a better starting point  (338 steps vs 119)
+
+def bsearch(mp):
+    bot = 1.9
+    top = 2.0
+    steps=0
+    while (mid:=(top+bot)/2) not in [top,bot]:
+        hi,mp,n = iterate(mp,mid)
+        steps += n+1
+        if hi is None:
+            return (bot,top,steps)
+        if hi:
+            bot = mid
+        else:
+            top = mid
+    return (bot,top,steps,mp)
+
+
+def syms(mp,delta=0.0001):
+    res={}
+    for k in mp:
+        for j in res:
+            if abs(mp[k]-mp[j])<delta:
+                res[j].append(k)
+                break
+        else:
+            res[k] = [k]
+    return res
+
+lb,ub,steps,mp = bsearch(mp)
+print(f"The dimension of the boundary of the Levy dragon is between {lb} and {ub} (with caveats about floating point precision)")
+print(f"  calculated in a total of {steps} steps")
+
+try:
+    from bigfloat import *
+except ModuleNotFoundError as e:
+    print("install the bigfloat package to get more precision about the dimension (when I implement that)")
+
+
 #Should print: 12823413011547414368862997525616691741041579688920794331363953564934456759066858494476606822552437442098640979/877512406035620068631903180662851572553488753575243048137500508983979170248733422547196905684808937723408093
-print("Aproximate value as a decimal:",float(sol))
+#print("Aproximate value as a decimal:",float(sol))
 #Should print: 14.613369478706703
 
 def toBitmap(IDs,depth):
     """return a list of byteStrings that can be made into a bitmap"""
     if depth==0:
-        #c = res[rIDs[canonical(IDs)]]
+        c = res[rIDs[canonical(IDs)]]
         ## Doing this sRGB is technically more correct (I think it's closer to what you
         ## would see with bad eyesight at a distance from a higher resolution monitor showing a more detailed image)
         ## but is less informative because it makes it harder to percive differences in brightness
@@ -285,7 +361,7 @@ def toBitmap(IDs,depth):
         #    return [b"\xff"]
         #srgb = 1.055*(c**(1/2.4)) - 0.055 if c>0.0031308 else 12.92*c
         #return [bytes([int(srgb*255)])]
-        return [bytes([ 255-int(res[rIDs[canonical(IDs)]]*255) ])]
+        return [bytes([ int(res[rIDs[canonical(IDs)]]*255) ])]
     else:
         return (
             list(map(op.add, toBitmap(list(merge(*(edges[ID][1] for ID in IDs if ID!=-1))),depth-1),

@@ -183,10 +183,14 @@ function grid(n,sty){
   return res + "</g>"
 }
 
-function colTree(col){ return drawMany(7,usq(col)) }
+function colTree(col){
+  return `<rect width=7 height=4 x=-3 y=0 stroke=${col} fill=none stroke-width=0.1 />`+
+    drawMany(7,usq(col))
+}
 
-grd = grid(2,"stroke:lightgray")+grid()
-trees = drawScaled(
+grd = grid(2,"stroke:#e8e8e8")+grid()
+trees = `<rect width=7 height=4 x=-3 y=0 stroke=blue fill=none stroke-width=0.075 />` +
+  drawScaled(
     drawScaled(colTree("red"),colTree("orange")),
     drawScaled(colTree("#d0d000"),colTree("green"))
   ) + drawMany(2,usq("blue"))
@@ -202,8 +206,6 @@ letters = mklet("B",0,2) +
   mklet("Y",1,0,"gray") + mklet("Z",2,0,"gray")
 
 draw(grd + trees + letters)
-
-// drawMany(2,`<rect style="opacity:0.5;fill:blue" x=0 y=0 width=1 height=1 />`))
 
 </script>
 <p>The tree may be divided into 28 squares in a 7x4 grid so that the largest square in the tree exactly fills one square of the grid. The 4 copies described above are nicely aligned to a subdivision of the grid, allowing each square of the grid to be described in terms of its 4 corners, each of which is either full, empty, a triangle, or an overlapping combination of squares of the original grid and their rotations. This lets us construct a non-deterministic automaton describing the shape. For example, the cell labeled B has tl-transitions to the cells C and W, tr-transitions to D and X, bl-transitions to E and Y and br-transitions to the cells F and Z. The transitions to C,D,E and F come from the yellow subtree and those labeled W,X,Y and Z come from the orange subtree.</p>
@@ -494,7 +496,7 @@ function removeVar(v,system){
   }
 }
 </script>
-<p>Unfortuately, it takes a while (20-30 seconds on my machine) to solve this system of linear equations. If you want to confirm the result for yourself, change the first line of the script below from "if(false){" to "if(true){" and run it. The result is logged to the browser console. Alternatively, get the Python code from <a href="https://github.com/penteract/pythagorasTree/blob/master/automaton.py">here</a>, which uses SymPy for solving the system of linear equations and takes about a second to run. </p>
+<p>Unfortuately, it takes a while (10-30 seconds on my machine) to solve this system of linear equations. If you want to confirm the result for yourself, change the first line of the script below from "if(false){" to "if(true){" and run it. The result is logged to the browser console. Alternatively, get the Python code from <a href="https://github.com/penteract/pythagorasTree/blob/master/automaton.py">here</a>, which uses SymPy for solving the system of linear equations and takes about a second to run. </p>
 <script id=result>
 if(false){
   function solve(system){

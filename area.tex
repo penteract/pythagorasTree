@@ -15,7 +15,7 @@
 
 \newcommand{\bounding}{
 \draw[tsty] (-2.5,1) -- (-1.5,0) -- (2.5,0) -- (3.5,1) -- (3.5,2.5) -- (2,4) -- (-1,4) -- (-2.5, 2.5) -- cycle;
-%\draw[tsty] (-3,1) -- (-2,0) -- (3,0) -- (4,1) -- (4,2) -- (2,4) -- (-1,4) -- (-3, 2) -- cycle;
+%\draw[tsty] (-3,0) -- (4,0) -- (4,4) -- (-3,4) -- cycle;
 }
 
 \newcommand{\subt}[2]{
@@ -42,6 +42,11 @@
 	\gtree{#1}{
 		\fill[tsty] (0,0) -- (1,0) -- (1,1) -- (0,1) -- cycle;
 	}{\bounding}
+}
+\newcommand{\filledtree}[1]{
+\gtree{#1}{
+	\fill[tsty] (0,0) -- (1,0) -- (1,1) -- (0.5,1.5) -- (0,1) -- cycle;
+}{\bounding}
 }
 \newcommand{\cdragon}[2]{
 	\gtree{#1}{}{#2}
@@ -73,7 +78,7 @@ The Pythagoras Tree is a fractal constructed by taking a unit square and then re
 }
 \end{tikzpicture}
 \end{center}
-In this paper, we show that the shape can be decomposed into a finite set of squares, each of which can be split into 4 elements of the same set. This gives rise to a system of linear equations which can be solved to give an exact rational number for the area of the shape.
+In this paper, we show that the shape can be decomposed into squares from a finite set, each of which can be split into 4 elements of the same set. This gives rise to a system of linear equations which can be solved to give an exact rational number for the area of the shape.
 
 \newpage
 \section{Defintions}
@@ -125,7 +130,7 @@ Whether the closure of the limit of the sequence has a different area from the l
 	It is tempting to say (for convenience when dealing with automata) that the axis-aligned squares (added at odd depths) are closed while the other squares are open, but that smells a bit.
 \end{remark}
 
-
+\subsection{Describing shapes by Automata}
 
 \begin{wrapfigure}{l}{2.1cm}
 \begin{tikzpicture}
@@ -150,7 +155,8 @@ Certain subsets of a unit square can be represented by dividing the square into 
 This representation lets us calculate the area of the triangle. Call the area of the triangle $A_T$. Since the area of the triangle is the sum of the areas of each of the 4 corners, we have that $A_T = A_F/4 + 2A_T/4 + A_E/4$ where $A_F$ is the area of a full square and $A_E$ is the area of an empty square. As $A_F=1$ and $A_E=0$, the equation becomes $A_T = 1/4 + A_T/2$. This lets us conclude that $A_T = 1/2$ i.e. the area of the triangle is exactly half that of the unit square.
 
 \begin{remark}
-	Technically we're using $\omega$-automata, which accept or reject infinte strings (F is the only accepting state, and every path that reaches it stays there forever, so we don't need a very fancy acceptance condition).
+	Technically we're using $\omega$-automata, which accept or reject infinite strings identifying points in a unit square according to whether the point is in the shape being described.
+	F is the only accepting state, and every path that reaches it stays there forever, so we don't need a very fancy acceptance condition.
 	Some points have multiple representations as infinite strings, but almost all of them don't, so we don't need to worry about them when calculating the area - formally, we are describing the points of the shape such that neither the x nor the y coordinate can be expressed as $a \cdotp 2^b$ where a and b are integers. The excluded subset has measure 0, so this does not affect our calculation of the area.
 	
 	Every open subset of the unit square can be described in this manner, if infinitely many states are allowed.
@@ -159,7 +165,7 @@ This representation lets us calculate the area of the triangle. Call the area of
 \subsection{Non-deterministic Automata}
 Overlapping shapes can be described by non-deterministic automata where each node may have multiple (or zero) edges with a given label. In this case we don't need a separate state for empty squares - if a corner of a node is empty, it may simply have no outgoing edges with that label.
 
-For our purposes, any given non-deterministic automaton may be converted to a deterministic automaton by having a node in the new one for every set of nodes in the old one. The node corresponding to the set $S$ should have an edge labeled $l$ to set of all nodes in the old automaton with edges labeled $l$ from some element of $S$, and all sets containing the full node $F$ may be collapsed into one, with edges to itself.
+For our purposes, any given non-deterministic automaton may be converted to a deterministic automaton by having a node in the new one for every set of nodes in the old one. The node corresponding to a set $S$ should have an edge labeled $l$ to the set of all nodes in the old automaton with edges labeled $l$ from some element of $S$. All sets containing the full node $F$ may be collapsed into one, with edges to itself.
 
 
 \section{Describing the Pythagoras tree using an automaton}
@@ -215,11 +221,13 @@ One way to look at the Pythagoras tree is as 4 copies of itself, together with t
 %		}}
 	\end{tikzpicture}
 \end{center}
-The tree may be divided into 28 squares in a $7\times4$ grid so that the largest square in the tree exactly fills one square of the grid. The 4 copies described above are nicely aligned to a subdivision of the grid, allowing each square of the grid to be described as it 4 corners, each of which is either full, empty, a triangle, or an overlapping combination of squares of the original grid and their rotations. This lets us construct a non-deterministic automaton describing the shape. For example, the cell labeled B has tl-transitions to the cells C and W, tr-transitions to D and X, bl-transitions to E and Y and br-transitions to the cells F and Z. The transitions to C,D,E and F come from the yellow subtree and those labeled W,X,Y and Z come from the orange subtree.
+The tree may be divided into 28 squares in a $7\times4$ grid so that the largest square in the tree exactly fills one square of the grid. The 4 copies described above are nicely aligned to a subdivision of the grid, allowing each square of the grid to be described as it 4 corners, each of which is either full, empty, a triangle, or an overlapping combination of squares of the original grid and their rotations. For example, the top-left corner of cell labeled B is a scaled down copy of the cell labeled C (from the yellow subtree) overlapping a scaled down copy of the cell labeled W (from the orange subtree).
+
+This lets us construct a non-deterministic automaton describing the shape. The cell labeled B has tl-transitions to the cells C and W, tr-transitions to D and X, bl-transitions to E and Y and br-transitions to the cells F and Z. The transitions to C,D,E and F come from the yellow subtree and those labeled W,X,Y and Z come from the orange subtree.
 
 As rotations can be multiples of $90^\circ$, we need 4 states needed for each of the 28 original cells. For example, the cell labeled Y has a tr-transition to a state corresponding to Z rotated $90^\circ$ clockwise.  The transitions from rotations are straightforward given the transitions from the originals. This gives a nondeterministic automaton with $4\times28+4+1 = 117$ states (the initial 28, their rotations, 4 triangles and 1 full square). This can be transformed into a deterministic automaton with $2^{116}+1$ states, but fortunately not all of them are needed. Instead we can start from the 28 singleton sets representing squares of the grid and discover that ${\sim}10000$ states are reachable from those, which can be reduced to ${\sim}1000$ by accounting for rotations and reflections.
 
-This gives a system of linear equations for the area of the shape described by each state. This system of equations has exactly one solution.
+This gives a system of linear equations for the area of the shape described by each state. This system of equations has exactly one solution, from which we can add up the values corresponding to the 28 squares to obtain the area of the Pythagoras tree.
 
 Noting that the area of the closure of the Pythagoras tree would also be a solution to that system of linear equations, the fact that it has a unique solution implies that taking the closure does not change the area.
 
@@ -227,9 +235,22 @@ Noting that the area of the closure of the Pythagoras tree would also be a solut
 
 
 \section{Further results}
+\subsection{Area of the filled Pythagoras Tree}
+An alternative definition of the Pythagoras tree includes triangles between the squares.
+
+\begin{tikzpicture}[scale=1]
+	\draw[color=lightgray, step=0.5] (-3.2,-0.2) grid (4.2,4.2);
+	\draw[color=gray, step=1] (-3.2,-0.2) grid (4.2,4.2);
+	\tikzstyle{tsty}=[fill=black]
+	\filledtree{\depth}
+\end{tikzpicture}
+
+This requires a small change to the automaton and has an area of $80605706690966227797244468721167282379053\over 5025557197283613113718784555470007578789$ ($\approx 16.039$).
+
+\subsection{Area of the Lévy C curve}
 We can also use this method to find the area of the Pythagoras tree with the internal triangles filled in, and to calculate the area of the Lévy C curve.
 
-In the case of the Lévy C curve, we need a slightly different setup. Squares known to be filled don't enter the system of linear equations, so the resulting family of equations has a scaling parameter that can be maximized while ensuring that no unit square described by the automaton has an area larger than 1. This reveals that at the scale of the other diagrams, the Lévy C curve has an area of $9/4$. More conventionally, it might be scaled so that the ends are 1 unit apart, in which case the area becomes $1/4$.
+In the case of the Lévy C curve, we need a slightly different setup. Squares known to be filled don't enter the system of linear equations, so the resulting family of solutions have a scaling parameter that can be maximized while ensuring that no unit square described by the automaton has an area larger than 1. This reveals that at the scale of the other diagrams, the Lévy C curve has an area of $9/4$. More conventionally, it might be scaled so that the ends are 1 unit apart, in which case the area becomes $1/4$.
 
 \begin{tikzpicture}[scale=1]
 	\draw[color=lightgray, step=0.5] (-3.2,-0.2) grid (4.2,4.2);
@@ -238,12 +259,38 @@ In the case of the Lévy C curve, we need a slightly different setup. Squares kn
 	\gtree{9}{}{\bounding}
 \end{tikzpicture}
 
-You may question why we can take the value of an arbitrary constant to be 1 when any value between 0 and 1 would be consistent with the equations we constructed. To answer this, we need a precise definition of the Lévy C curve. Let $d_0$ be the transformation which rotates 45 degrees anticlockwise and scales by $1/\sqrt{2}$ centered on $(-1,1)$
-and let $d_1$ be the transformation which rotates 45 degrees clockwise and scales by $1/\sqrt{2}$ centered on $(2,1)$. Given an infinite string $(a_i)$ in $\{0,1\}^\omega$, pick any point $p$ in $\mathbb{R}^2$, let $f(a)$ be the limit of the sequence $p,\ d_{a_1}(p),\ d_{a_1}(d_{a_2}(p)),\ d_{a_1}(d_{a_2}(d_{a_3}(p))),\ \dots$. This limit is independent of the choice of $p$. Under this definition, every point that is not outside the C dragon at some finite iteration is inside the limit. 
+You may question why we can just use the largest solution which gives no piece a larger area than it covers. The variables in the equations can be interpreted as areas of any subset of $\mathbb{R}^2$ which is equal to two appropriately rotated and scaled copies of itself. This includes the empty set, so to answer this, we need a precise definition of the Lévy C curve:
+
+Let $d_0$ be the transformation which rotates 45 degrees anticlockwise and scales by $1/\sqrt{2}$ centered on $(-1,1)$
+and let $d_1$ be the transformation which rotates 45 degrees clockwise and scales by $1/\sqrt{2}$ centered on $(2,1)$.
+Given an infinite string $(a_i)$ in $\{0,1\}^\mathbb{N}$, pick any point $p$ in $\mathbb{R}^2$, let $f(a)$ be the limit of the sequence $p,\ d_{a_0}(p),\ d_{a_0}(d_{a_1}(p)),\ d_{a_0}(d_{a_1}(d_{a_2}(p))),\ \dots$. This limit is independent of the choice of $p$. The Lévy C curve is the set  $\{f(a) : a \in \{0,1\}^\mathbb{N}\}$.
+
+This is equivalent to defining it as the intersection of an infinite sequence of shapes, starting with the (closed) 7x4 rectangle that contains the Pythagoras tree and continuing  with 4 copies of the previous iteration, transformed by $d_0\circ d_0$, $d_0\circ d_1$, $d_1\circ d_0$ and $d_1\circ d_1$. 
+
+After selecting the largest solution to the system of linear equations which assigns no variable a value greater than 1, note that any variable to which 1 has been assigned must correspond to a square for which all of the corners also fill their area ($1=(a+b+c+d)/4$ and $a,b,c,d\le 1$, imply that $a=b=c=d=1$). We can show that all points in any such square lie within the shape, therefore it should have area 1. Assume, seeking a contradiction, that some point $p$ in this square ($Q$) lies outside the shape. Considering the fractal as an intersection of an infinite sequence, $p$ must be outside some depth-$d$ iteration. Since each finite depth iteration is closed, $p$ has a ball of radius $r>0$ around it which is also not part of that finite depth iteration (and thus is not part of the fractal). This ball contains some grid-aligned square ($q$) of side-length $2^{-n}$ (with $n$ an integer large enough that $2^{-n}\sqrt{2}<r$, $n>d$ and $q$ is smaller than $Q$) which contains $p$. The square $q$ does not correspond to a variable of our system of linear equations, because it lies outside the depth-$d$ iteration of the fractal, so corresponds to a region of area zero. Since $q$ is inside $Q$, this contradicts the above claim that every subsquare of a square assigned area 1 must also be assigned area 1 when applied inductively. Therefore every point in a square assigned area 1 is part of the Lévy C curve and we have chosen the correct solution to the system of linear equations.
+
+If the the Lévy C curve in fact had area 0, the system of linear equations would have had exactly 1 solution in which all variables were 0. An example of this will is seen in \ref{sec:chaos}.
+
 %    \begin{scope}[yshift=1cm,rotate=45,scale=0.7071]
 %	#1
 %\end{scope}
 %\begin{scope}[xshift=0.5cm,yshift=1.5cm,rotate=-45,scale=0.7071]
+
+\subsection{Fractal dimension of the boundary of the Pythagoras Tree}
+
+\subsection{Accurate image of the Pythagoras Tree}
+Solving the system of linear equations for the area gives the fraction of each square occupied by the Pythagoras for any resolution which is a power of 2. This allows us to create a bitmap with more accuracy than would be obtained by rendering some finite depth version.
+
+\includegraphics[width=\linewidth]{x7.png}
+
+\label{sec:chaos}
+\subsection{Chaos game}
+
+The rule is ``move by half the distance towards a random point of a hexagon on the unit circle, such that the chosen point isn't to the right of the last point and isn't to the left of the 2nd last point". Formally we take 6 functions $d_0,\cdots, d_5$ which take a point in $\mathbb{R}^2$ and send it towards each of the 6 corners. Then consider sequences $(a_i)$ in $\{0,\cdots,5\}^\mathbb{N}$ such that for all $i$, $a_i\ne a_{i+1}+1\ (\textrm{mod }6)$ and $a_i+1\ne a_{i+2}\ (\textrm{mod }6)$. 
+
+Define $f(a)$ to be the limit of $p,\ d_{a_0}(p),\ d_{a_0}(d_{a_1}(p)),\ d_{a_0}(d_{a_1}(d_{a_2}(p))),\ \dots$ where $p$ is any point in $\mathbb{R}^2$, noting that the choice of p doesn't affect the limit.
+
+For this fractal, we divide an equilateral triangle into 4 equilateral triangles, rather than dividing a square into 4 squares, but the process is not very different. The containing shape is a hexagon rather than a rectangle. 
 
 \appendix
 \section{State machine}
