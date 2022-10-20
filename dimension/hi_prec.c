@@ -5,7 +5,7 @@
 #include<stdbool.h>
 // precision:
 #ifndef P
-#define P 5000
+#define P 1000
 #endif
 
 //
