@@ -339,11 +339,24 @@ lb,ub,steps,mp = bsearch(mp)
 print(f"The dimension of the boundary of the Levy dragon is between {lb} and {ub} (with caveats about floating point precision)")
 print(f"  calculated in a total of {steps} steps")
 
+if True:
+    """Print a description of the system for a high precision library to give more precise bounds on the dimension"""
+    fl = open("vs.txt","w")
+    l=list(mp)
+    rl = {}
+    for i,k in enumerate(l):
+        rl[k]=i
+    N=len(l)
+    print(N,file=fl)
+    for k in l:
+        print(*[rl[x] if x in rl else N for x in eMap[k]], mp[k] ,file=fl)
+
+"""
 try:
     from bigfloat import *
 except ModuleNotFoundError as e:
     print("install the bigfloat package to get more precision about the dimension (when I implement that)")
-
+"""
 
 #Should print: 12823413011547414368862997525616691741041579688920794331363953564934456759066858494476606822552437442098640979/877512406035620068631903180662851572553488753575243048137500508983979170248733422547196905684808937723408093
 #print("Aproximate value as a decimal:",float(sol))
