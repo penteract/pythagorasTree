@@ -154,38 +154,8 @@ print("\n".join(drawTri([(5,0,0)],"u",5,(lambda ys,b:srtrmdups([x for a in ys fo
 for i in range(8):
     print(countTri([(5,0,4)],"u",i,(lambda ys,b:sorted(set([x for a in ys for x in edges[a][b]]))),lambda l:len(l)>0 ))
 
-l = list(map(tuple,compositions.values()))
-seen = set(l)
-eMap = {}
-for ps in l:
-    if ps not in eMap:
-        eMap[ps]= [tuple(sorted(set(p2 for p in ps for p2 in edges[p][lab]))) for lab in range(4)]
-        for ks in eMap[ps]:
-            if ks not in seen:
-                l.append(ks)
-                seen.add(ks)
-                
-print(len(l))
-"""
-import sympy
-def var(tup):
-    #print(repr("x_"+"_".join(map(lambda t:f"{t[0]}{t[1]}{t[2]}" ,tup))))
-    return sympy.var("x_"+"_".join(map(lambda t:f"{t[0]}{t[1]}{t[2]}" ,tup)))
-print("constructing a system of linear equations")
-eqns = [
-    var(can)*4 - sum(var(x) for x in eMap[can] if len(x))
-    for can in eMap
-    ]
-print(eqns[0])
-from sympy.solvers.solveset import linsolve
-IDs = list(eMap)
-rIDs = {t:ix for ix,t in enumerate(IDs)}
-print("solving system of linear equations")
-res = linsolve(eqns,list(map(var,IDs)))
-print("number of solutions: ",len(res))
-res=list(res)[0]"""
-
-
+import fractalCalc
+eMap = fractalCalc.from_nondet(edges,list(map(tuple,compositions.values())))
 
 rEMap = {}
 for k in eMap:
@@ -318,3 +288,38 @@ mp = {k:1 for k in dd[list(dd)[-1]]}
 lb,ub,steps,mp = bsearch(mp)
 print(f"The dimension of This fractal is between {lb} and {ub} (with caveats about floating point precision)")
 print(f"  calculated in a total of {steps} steps")
+import sys
+sys.argv.append("reduce")
+if "reduce" in sys.argv:
+    from collections import defaultdict
+    classes = defaultdict(list)
+    for k,v in mp.items():
+        classes[round(v,5)].append(k)
+    def reducedSub(k):
+        return tuple(round(mp[x],5) for x in eMap[k] if x in mp)
+    newmp = {}
+    neweMap = {**eMap}
+    for rv in classes:
+        r0 = reducedSub(k0:=classes[rv][0])
+        newmp[k0]=mp[k0]
+        for k in classes[rv]:
+            if (rk := reducedSub(classes[rv][0]))!=r0:
+                print("bad reduction")
+                break
+            neweMap[k] = tuple(classes[round(mp[x],5)][0] if x in mp else x for x in eMap[k])
+        else:
+            continue
+        break
+    else:
+        eMap=neweMap
+        mp=newmp
+if "print_system" in sys.argv:
+    fl = open("star_system.txt","w")
+    l=list(mp)
+    rl = {}
+    for i,k in enumerate(l):
+        rl[k]=i
+    N=len(l)
+    print(N,file=fl)
+    for k in l:
+        print(*[rl[x] if x in rl else N for x in eMap[k]], mp[k] ,file=fl)
