@@ -55,8 +55,6 @@ def getArea(eMap,starting):
         for c in "() ,-+":
             s=s.replace(c,"_")
         return sympy.var("x_"+s)
-        #print(repr("x_"+"_".join(map(lambda t:f"{t[0]}{t[1]}{t[2]}" ,tup))))
-        #return sympy.var("x_"+"_".join(map(lambda t:f"{t[0]}{t[1]}{t[2]}" ,tup)))
     print("constructing a system of linear equations")
     eqns = [
         var(can)*4 - sum(var(x) for x in eMap[can] if len(x))
