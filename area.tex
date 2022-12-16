@@ -167,7 +167,7 @@ Overlapping shapes can be described by non-deterministic automata where each nod
 
 For our purposes, any given non-deterministic automaton may be converted to a deterministic automaton by having a node in the new one for every set of nodes in the old one. The node corresponding to a set $S$ should have an edge labeled $l$ to the set of all nodes in the old automaton with edges labeled $l$ from some element of $S$. All sets containing the full node $F$ may be collapsed into one, with edges to itself.
 
-
+\label{sec:automaton}
 \section{Describing the Pythagoras tree using an automaton}
 One way to look at the Pythagoras tree is as 4 copies of itself, together with the 3 squares in the depth 2 rendering.
 \begin{center}
@@ -221,6 +221,8 @@ One way to look at the Pythagoras tree is as 4 copies of itself, together with t
 %		}}
 	\end{tikzpicture}
 \end{center}
+That is, the Pythagoras  Tree is the least fixed point of the function sending a subset of $\mathbb{R}^2$ to the union of 4 copies appropriately rotated and scaled together with the 2 squares from the depth-2 rendering.
+
 The tree may be divided into 28 squares in a $7\times4$ grid so that the largest square in the tree exactly fills one square of the grid. The 4 copies described above are nicely aligned to a subdivision of the grid, allowing each square of the grid to be described as it 4 corners, each of which is either full, empty, a triangle, or an overlapping combination of squares of the original grid and their rotations. For example, the top-left corner of cell labeled B is a scaled down copy of the cell labeled C (from the yellow subtree) overlapping a scaled down copy of the cell labeled W (from the orange subtree).
 
 This lets us construct a non-deterministic automaton describing the shape. The cell labeled B has tl-transitions to the cells C and W, tr-transitions to D and X, bl-transitions to E and Y and br-transitions to the cells F and Z. The transitions to C,D,E and F come from the yellow subtree and those labeled W,X,Y and Z come from the orange subtree.
@@ -229,7 +231,7 @@ As rotations can be multiples of $90^\circ$, we need 4 states needed for each of
 
 This gives a system of linear equations for the area of the shape described by each state. This system of equations has exactly one solution, from which we can add up the values corresponding to the 28 squares to obtain the area of the Pythagoras tree.
 
-Noting that the area of the closure of the Pythagoras tree would also be a solution to that system of linear equations, the fact that it has a unique solution implies that taking the closure does not change the area.
+Noting that the area of the closure of the Pythagoras tree would also be a solution to that system of linear equations (it is also a fixed point of the function and does not exceed the $7\times 4$ grid), the fact that there is a unique solution implies that taking the closure does not change the area.
 
 \section{Details of the calculation}
 
@@ -277,6 +279,12 @@ If the the Lévy C curve in fact had area 0, the system of linear equations woul
 %\begin{scope}[xshift=0.5cm,yshift=1.5cm,rotate=-45,scale=0.7071]
 
 \subsection{Fractal dimension of the boundary of the Pythagoras Tree}
+
+Using the solution to the system of linear equations from \ref{sec:automaton}, we can tell which squares contain an area of the Pythagoras tree equal to their size. These squares contain none of the boundary of the closure of the Pythagoras Tree. If we alter the automaton by replacing all nodes corresponding to such filled squares with the empty node, the remaining squares all contain some part of the boundary. The remaining automaton doesn't describe all of the boundary - there are some horizontal or vertical edges of squares that are missed. However, horizontal and vertical edges are in bijection with scaled down diagonal ones, all of which are included, so the fractal dimension wouldn't change by including them.
+
+The area, a 2 dimensional quantity, was a solution to the system of linear equations $A_Q = \Sigma_{q\in\mathrm{corners}(Q)} {A_q\over 2^2}$ (with some squares also having known areas). Assuming that the boundary has a well defined fractal dimension $d$, there will be a solution to $A_{d,Q} = \Sigma_{q\in\mathrm{corners}(Q)} {A_{d,q}\over 2^d}$ (with variables corresponding to empty squares set to 0), in which each variable is assigned the d-dimensional Hausdorff measure of the corresponding subset of $[0,1]^2$.
+
+The approximate value of $d$ can be found by binary search. The system of linear equations for a candidate $\delta$ can be treated as a recurrence relation. If these are iterated with a value $\delta<d$ (starting from any assignment which is strictly positive on variables corresponding to non-empty squares), they eventually reach a state from which all values decrease (and would continue to decrease indefinitely). Similarly, if $\delta>d$, then iterating the recurrence relation reaches a state from which all values increase.
 
 \subsection{Accurate image of the Pythagoras Tree}
 Solving the system of linear equations for the area gives the fraction of each square occupied by the Pythagoras for any resolution which is a power of 2. This allows us to create a bitmap with more accuracy than would be obtained by rendering some finite depth version.
