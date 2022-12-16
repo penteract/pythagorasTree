@@ -1,3 +1,4 @@
 a.out
 *.pdf
 *.bmp
+__pycache__

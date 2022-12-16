@@ -25,13 +25,18 @@ res=list(res)[0]"""
 
 #TODO: rotations+reflections (cannonicalization) and known full nodes
 
-def from_nondet(system,starting):
+def from_nondet(system,starting,cannonical=None):
     """ system[Key] = {0:[Key],1:[Key],2:[Key],3:[Key]}
        starting = [Key] | [tuple[Key]]
+       cannonical(tuple[Key]) = tuple[Key]
+       cannoncical(cannonical(x))==cannonical(x)
        Given a system where a piece may be described in terms of overlapping pieces,
        return one where a piece is described in terms of non overlapping pieces.
+       The returned system is limited to those nodes which can be reached from `starting`.
        This is equivalent to a transformation from a non-deterministic automaton to a deterministic automaton
        result[tuple[Key]] = (tuple[Key],tuple[Key],tuple[Key],tuple[Key]) """
+    if cannonical==None:
+        cannonical = lambda x:x
     l = list(starting)
     if l[0] in system:
         # the starting pieces are single tiles, not lists of overlapping ones
@@ -40,14 +45,14 @@ def from_nondet(system,starting):
     eMap={}
     for ps in l:
         if ps not in eMap:
-            eMap[ps]= [tuple(sorted(set(p2 for p in ps for p2 in system[p][lab]))) for lab in range(4)]
+            eMap[ps]= tuple([cannonical(tuple(sorted(set(p2 for p in ps for p2 in system[p][lab])))) for lab in range(4)])
             for ks in eMap[ps]:
                 if ks not in seen:
                     l.append(ks)
                     seen.add(ks)
     return eMap
 
-def getArea(eMap,starting):
+def getArea(eMap):
     #todo: consider full nodes
     import sympy
     def var(tup):
@@ -71,9 +76,8 @@ def getArea(eMap,starting):
         return None
     sol = list(sols)[0]
     #if len(sols)==1:
-    a = sum(sol[rIDs[c]] for c in starting)
-    print("Area is",a)
-    return a
+    aMap = {c: sol[rIDs[c]] for c in rIDs}
+    return aMap
 
 def uget(a,ufds):
     while a!=(a:=ufds[a]):
@@ -165,7 +169,7 @@ def findDim(eMap):
     return result
 
 def mkFile(eMap, mp, fname):
-    """print a description of the system for accurately computing the dimension
+    """produce a description of the system for accurately computing the dimension
     given eMap[Key]=(Key,Key,Key,Key), mp[Key]=float, fname= string"""
     #reduce the system
     from collections import defaultdict
@@ -173,42 +177,52 @@ def mkFile(eMap, mp, fname):
     for k,v in mp.items():
         classes[round(v,5)].append(k)
     def reducedSub(k):
-        return tuple(round(mp[x],5) for x in eMap[k] if x in mp)
+        return tuple(sorted(round(mp[x],5) for x in eMap[k] if x in mp))
     newmp = {}
     neweMap = {**eMap}
+    reduced=False
     for rv in classes:
         r0 = reducedSub(k0:=classes[rv][0])
         newmp[k0]=mp[k0]
         for k in classes[rv]:
-            if (rk := reducedSub(classes[rv][0]))!=r0:
-                print("bad reduction")
+            if (rk := reducedSub(k))!=r0:
+                #print("reduction doesn't work, not reducing")
                 break
             neweMap[k] = tuple(classes[round(mp[x],5)][0] if x in mp else x for x in eMap[k])
         else:
             continue
         break
     else:
+        if len(mp)!=len(newmp):
+            reduced=True
         eMap=neweMap
         mp=newmp
     #print the system
-    fl = open("star_system.txt","w")
+    fl = open(fname,"w")
     l=list(mp)
     rl = {}
     for i,k in enumerate(l):
         rl[k]=i
     N=len(l)
+    print(f"Saving a {'reduced '*reduced}representation of the system to '{fname}' for computing the fractal dimension with high precision")
     print(N,file=fl)
     for k in l:
         print(*[rl[x] if x in rl else N for x in eMap[k]], mp[k] ,file=fl)
 
 def studyFractal(nondetSystem, starting, name):
-    print(f"Properties of {name}")
+    print(f"Properties of {name}:")
     eMap = from_nondet(nondetSystem, starting)
-    #a = getArea(eMap,starting)
+    aMap = getArea(eMap)
+    a = sum(aMap[c] for c in starting)
+    print(f"Area: {a}")
     lb,ub,steps,mp = findDim(eMap)
     print(f"The dimension of This fractal is between {lb} and {ub} (with caveats about floating point precision)")
     print(f"  calculated in a total of {steps} steps")
-    mkFile(eMap,mp,name+".txt")
+    mkFile(eMap,mp,name.replace(" ","_")+"_DimFinder.txt")
+    if a>0:
+        return aMap
+    else:
+        return mp
     
 
     

@@ -89,30 +89,6 @@ def getEdges(t, recent, prev):
 compositions = {k:[] for k in range(6)}
 edges = {}
 
-def drawTri(t, orientation, depth, subfn, drawfn):
-    if depth == 0:
-        yield drawfn(t)
-    elif orientation=="u":
-        for k in drawTri(subfn(t,0),"u",depth-1,subfn,drawfn):
-            yield k
-        for k in hconcat(drawTri(subfn(t,2),"u",depth-1,subfn,drawfn),
-                         drawTri(subfn(t,3),"d",depth-1,subfn,drawfn),
-                         drawTri(subfn(t,1),"u",depth-1,subfn,drawfn) ):
-            yield k
-    elif orientation=="d":
-        for k in hconcat(drawTri(subfn(t,0),"d",depth-1,subfn,drawfn),
-                         drawTri(subfn(t,3),"u",depth-1,subfn,drawfn),
-                         drawTri(subfn(t,1),"d",depth-1,subfn,drawfn)):
-            yield k
-        for k in drawTri(subfn(t,2),"d",depth-1,subfn,drawfn):
-            yield k
-    else:
-        raise Exception("unknown orientation")
-
-def hconcat(*args):
-    for x in zip(*args):
-        yield "".join(x)
-
 for recent in range(6):
     for prev in range(6):
         for t in range(6):
@@ -126,33 +102,20 @@ for recent in range(6):
                 for (src,lab) in getEdges(*piece):
                     edges[src][lab].append(piece)
 
-def countTri(t, orientation, depth, subfn, drawfn):
-    tot=0
-    if depth == 0:
-        return drawfn(t)
-    elif orientation=="u":
-        tot+=countTri(subfn(t,0),"u",depth-1,subfn,drawfn)
-        tot+=sum([countTri(subfn(t,2),"u",depth-1,subfn,drawfn),
-                         countTri(subfn(t,3),"d",depth-1,subfn,drawfn),
-                         countTri(subfn(t,1),"u",depth-1,subfn,drawfn) ])
-    elif orientation=="d":
-        tot+=sum([countTri(subfn(t,0),"d",depth-1,subfn,drawfn),
-                         countTri(subfn(t,3),"u",depth-1,subfn,drawfn),
-                         countTri(subfn(t,1),"d",depth-1,subfn,drawfn)])
-        tot+=countTri(subfn(t,2),"d",depth-1,subfn,drawfn)
-    else:
-        raise Exception("unknown orientation")
-    return tot
-id=lambda x:x
 
 def srtrmdups(ts):
+    """Sort and remove dupliactes"""
     l = sorted(ts)
-    ps = [a for a,b in zip(l,l[1:]+[None]) if a!=b]
+    ps = tuple([a for a,b in zip(l,l[1:]+[None]) if a!=b])
     return ps
+from drawSystems import drawTri
 print("\n".join(drawTri([(5,0,0)],"u",5,(lambda ys,b:srtrmdups([x for a in ys for x in edges[a][b]])),lambda l:" " if len(l)==0 else"#")))
 
-for i in range(8):
-    print(countTri([(5,0,4)],"u",i,(lambda ys,b:sorted(set([x for a in ys for x in edges[a][b]]))),lambda l:len(l)>0 ))
 
 import fractalCalc
-fractalCalc.studyFractal(edges,list(map(tuple,compositions.values())), "Chaos Game")
+sMap = fractalCalc.studyFractal(edges,list(map(tuple,compositions.values())), "Chaos Game")
+mx = max(sMap.values())
+
+print("\n".join(" "*(32-p)+r for p,r in enumerate(
+    drawTri(compositions[1],"u",5,(lambda ys,b:srtrmdups([x for a in ys for x in edges[a][b]])),
+                        lambda l:" ,./+x=&#"[int((sMap[l]if l in sMap else 0 if l==() else 0)*8/mx)]))))
