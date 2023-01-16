@@ -1,4 +1,7 @@
 a.out
 *.pdf
 *.bmp
+*.aux
+*.log
+*.synctex.gz
 __pycache__

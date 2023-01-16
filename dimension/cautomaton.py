@@ -199,8 +199,13 @@ for IDs in l:
                 seen.add(nxt)
                 l.append(nxt)
 print(len(seen),len(l),len(eMap))
+import fractalCalc
 
-    
+eMap2 = fractalCalc.from_nondet(edges,[c for r in grids[0] for c in r],canonical)
+
+print(len(eMap),len(eMap2))
+
+#eMap=eMap2    
 def uget(a,ufds):
     while a!=(a:=ufds[a]):
         pass
@@ -272,19 +277,19 @@ rIDs = {t:ix for ix,t in enumerate(IDs)}
 
 print("solving system of linear equations")
 varList = list(map(var,IDs))
-res = linsolve(eqns,varList)
+ress1 = linsolve(eqns,varList)
 #print("number of solutions: ",len(res))
-res=list(res)[0]
+res=list(ress1)[0]
 #print("The exact answer (with a free variable):", sol:=28-sum(res[rIDs[canonical([c])]] for r in grids[0] for c in r))
 
 rgs = [(i,res[i].args) for i,x in enumerate(IDs) if len(res[i].args)==2]
 minv,mini = min((args[0],i) for i,args in rgs)
 #print(res[mini])
 eqns.append(res[mini])
-res = linsolve(eqns,varList)
+ress2 = linsolve(eqns,varList)
 print("solving another linear equations")#this could be avoided since we've already done the work
 #print("number of solutions: ",len(res))
-res=list(res)[0]
+res=list(ress2)[0]
 print("The exact area of the Levy dragon:", sol:=28-sum(res[rIDs[canonical([c])]] for r in grids[0] for c in r))
 #print("The exact answer as a decimal",float(sol))
 #print(minv,mini)
