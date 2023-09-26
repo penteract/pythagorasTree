@@ -40,7 +40,7 @@ def from_nondet(system,starting,cannonical=None):
     l = list(starting)
     if l[0] in system:
         # the starting pieces are single tiles, not lists of overlapping ones
-        l = [(x,) for x in l]
+        l = [cannonical((x,)) for x in l]
     seen = set(l)
     eMap={}
     for ps in l:

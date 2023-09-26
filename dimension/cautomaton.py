@@ -205,7 +205,7 @@ eMap2 = fractalCalc.from_nondet(edges,[c for r in grids[0] for c in r],canonical
 
 print(len(eMap),len(eMap2))
 
-#eMap=eMap2    
+eMap=eMap2
 def uget(a,ufds):
     while a!=(a:=ufds[a]):
         pass
@@ -311,7 +311,7 @@ def iterate(mp, d = 2, N = 1000):
             return sgn,mp,i
     return (None,mp,N)
 
-mp = {k:1 for k in dd[7,]} # using the area (1-res[rIDs[k]]) is not a better starting point  (338 steps vs 119)
+mp = {k:1 for k in dd[uget((7,),ufds)]} # using the area (1-res[rIDs[k]]) is not a better starting point  (338 steps vs 119)
 
 def bsearch(mp):
     bot = 1.9
