@@ -123,8 +123,8 @@ This paper sets out to find the exact area of the Pythagoras tree, which we will
 This sequence starts $1,2,3,4,5,5 {15\over 16},6 {53\over 64},\cdots$. The limit of this monotone sequence exists since it is bounded above by the area of a $7 \times 4$ rectangle which no part of the shape leaves.
 
 \subsection{Closure}
-Whether the squares are open or closed has no effect on the area of a finite depth rendering, therefore has no effect on the limit of the sequence of areas. Since the Pythagoras tree is not closed, even if closed squares are used rather than open ones, 
-Whether the closure of the limit of the sequence has a different area from the limit of the sequence is a different question that could be addressed directly, but will be shown to be false in the process of finding the area. 
+Whether the squares are open or closed has no effect on the area of a finite depth rendering, therefore has no effect on the limit of the sequence of areas. Note that the Pythagoras tree as defined is not closed, even if closed squares are used rather than open ones. 
+Whether the closure of the Pythagoras tree has a different area from the Pythagoras tree is a question that could be addressed directly, but will be shown to be false in the process of finding the area. 
 
 \begin{remark}
 	It is tempting to say (for convenience when dealing with automata) that the axis-aligned squares (added at odd depths) are closed while the other squares are open, but that smells a bit.
@@ -163,7 +163,7 @@ This representation lets us calculate the area of the triangle. Call the area of
 \end{remark}
 
 \subsection{Non-deterministic Automata}
-Overlapping shapes can be described by non-deterministic automata where each node may have multiple (or zero) edges with a given label. In this case we don't need a separate state for empty squares - if a corner of a node is empty, it may simply have no outgoing edges with that label.
+Overlapping shapes can be described by non-deterministic automata where each node may have multiple (or zero) edges with a given label. In this case we don't need a separate state for empty squares - if a corner of a node is empty, it simply has no outgoing edges with that label.
 
 For our purposes, any given non-deterministic automaton may be converted to a deterministic automaton by having a node in the new one for every set of nodes in the old one. The node corresponding to a set $S$ should have an edge labeled $l$ to the set of all nodes in the old automaton with edges labeled $l$ from some element of $S$. All sets containing the full node $F$ may be collapsed into one, with edges to itself.
 
@@ -285,6 +285,14 @@ Using the solution to the system of linear equations from \ref{sec:automaton}, w
 The area, a 2 dimensional quantity, was a solution to the system of linear equations $A_Q = \Sigma_{q\in\mathrm{corners}(Q)} {A_q\over 2^2}$ (with some squares also having known areas). Assuming that the boundary has a well defined fractal dimension $d$, there will be a solution to $A_{d,Q} = \Sigma_{q\in\mathrm{corners}(Q)} {A_{d,q}\over 2^d}$ (with variables corresponding to empty squares set to 0), in which each variable is assigned the d-dimensional Hausdorff measure of the corresponding subset of $[0,1]^2$.
 
 The approximate value of $d$ can be found by binary search. The system of linear equations for a candidate $\delta$ can be treated as a recurrence relation. If these are iterated with a value $\delta<d$ (starting from any assignment which is strictly positive on variables corresponding to non-empty squares), they eventually reach a state from which all values decrease (and would continue to decrease indefinitely). Similarly, if $\delta>d$, then iterating the recurrence relation reaches a state from which all values increase.
+
+\begin{remark}
+	The fact that all values eventually decrease/increase if $\delta\not = d$ would be tedious to prove, but we don't actually need to prove that to put bounds on the area, merely observe it. The thing that needs proving is that if there exist $A_Q >0$ for all $Q$ such that $A_Q <  \Sigma_{q\in\mathrm{corners}(Q)} {A_{q}\over 2^\delta}$ then $\delta > d$ and if there exist $A_Q >0$ for all $Q$ such that $A_Q >  \Sigma_{q\in\mathrm{corners}(Q)} {A_{q}\over 2^\delta}$ then $\delta < d$.
+	
+	We also want to split the directed graph described by a deterministic automaton into strongly connected components. All nodes within an SCC must have the same dimension (because scaling doesn't change dimension and they all contain shrunk copies of each other), and edges to nodes with smaller dimension don't matter because the removing a piece with lower dimension can't reduce the dimension.
+	
+	Without splitting into SCCs, the above process might not find a lower bound for $d$ because other parts with lower dimension than the maximum would get in the way.
+\end{remark}
 
 \subsection{Accurate image of the Pythagoras Tree}
 Solving the system of linear equations for the area gives the fraction of each square occupied by the Pythagoras for any resolution which is a power of 2. This allows us to create a bitmap with more accuracy than would be obtained by rendering some finite depth version.
