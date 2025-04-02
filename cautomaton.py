@@ -1,3 +1,5 @@
+
+## Calculating the area of the Levy C curve
 #from heapq import merge
 import operator as op
 import itertools
@@ -227,7 +229,7 @@ print("solving another linear equations")#this could be avoided since we've alre
 #print("number of solutions: ",len(res))
 res=list(res)[0]
 print("The exact answer as a fraction:", sol:=28-sum(res[rIDs[canonical([c])]] for r in grids[0] for c in r))
-print("The exact answer as a decimal",28-float(sol))
+print("The exact answer as a decimal",float(sol))
 #print(minv,mini)
 
 #Should print: 12823413011547414368862997525616691741041579688920794331363953564934456759066858494476606822552437442098640979/877512406035620068631903180662851572553488753575243048137500508983979170248733422547196905684808937723408093

@@ -25,7 +25,7 @@ res=list(res)[0]"""
 
 #TODO: rotations+reflections (cannonicalization) and known full nodes
 
-def from_nondet(system,starting,cannonical=None):
+def from_nondet(system,starting,cannonical=None,setify=True):
     """ system[Key] = {0:[Key],1:[Key],2:[Key],3:[Key]}
        starting = [Key] | [tuple[Key]]
        cannonical(tuple[Key]) = tuple[Key]
@@ -34,7 +34,9 @@ def from_nondet(system,starting,cannonical=None):
        return one where a piece is described in terms of non overlapping pieces.
        The returned system is limited to those nodes which can be reached from `starting`.
        This is equivalent to a transformation from a non-deterministic automaton to a deterministic automaton
-       result[tuple[Key]] = (tuple[Key],tuple[Key],tuple[Key],tuple[Key]) """
+       result[tuple[Key]] = (tuple[Key],tuple[Key],tuple[Key],tuple[Key])
+       setify controls whether to automatically remove duplicate keys. Disabling this is useful for detecting overlaps.
+       """
     if cannonical==None:
         cannonical = lambda x:x
     l = list(starting)
@@ -45,21 +47,26 @@ def from_nondet(system,starting,cannonical=None):
     eMap={}
     for ps in l:
         if ps not in eMap:
-            eMap[ps]= tuple([cannonical(tuple(sorted(set(p2 for p in ps for p2 in system[p][lab])))) for lab in range(4)])
+            if setify:
+                eMap[ps]= tuple([cannonical(tuple(sorted(set(p2 for p in ps for p2 in system[p][lab])))) for lab in range(4)])
+            else:
+                eMap[ps]= tuple([cannonical(tuple(p2 for p in ps for p2 in system[p][lab])) for lab in range(4)])
             for ks in eMap[ps]:
                 if ks not in seen:
                     l.append(ks)
                     seen.add(ks)
     return eMap
 
+
+def var(tup):
+    import sympy
+    s = str(tup)
+    for c in "() ,-+":
+        s=s.replace(c,"_")
+    return sympy.var("x_"+s)
 def getArea(eMap):
     #todo: consider full nodes
     import sympy
-    def var(tup):
-        s = str(tup)
-        for c in "() ,-+":
-            s=s.replace(c,"_")
-        return sympy.var("x_"+s)
     print("constructing a system of linear equations")
     eqns = [
         var(can)*4 - sum(var(x) for x in eMap[can] if len(x))

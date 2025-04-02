@@ -3,6 +3,7 @@
 #from heapq import merge
 import operator as op
 import itertools
+from collections import defaultdict
 #(bottom left is (0,0))
 grid = [[y*7+x for y in range(4)] for x in range(7)]
 
@@ -143,7 +144,43 @@ def merge(*args):
     if any(map(op.eq,l,l[1:])):
         print(args,l)
     return l
-    
+
+def merge2(*args):
+    l = []
+    for a in args:
+        a=iter(a)
+        nw = [-2,-2]
+        i=0
+        try:
+            na = next(a)
+            while i<len(l):
+                if l[i]==na:
+                    if nw[-2]!=na:
+                        nw.append(na)
+                    if nw[-2]!=na:
+                        nw.append(na)
+                    i+=1
+                    na=next(a)
+                elif l[i]<na:
+                    if nw[-2]!=l[i]: nw.append(l[i])
+                    i+=1
+                else:
+                    if nw[-2]!=na: nw.append(na)
+                    na=next(a)
+        except StopIteration as e:
+            while i<len(l):
+                if nw[-2]!=l[i]: nw.append(l[i])
+                i+=1
+            l=nw[2:]
+            continue
+        if nw[-2]!=na: nw.append(na)
+        for na in a:
+            if nw[-2]!=na: nw.append(na)
+        l=nw[2:]
+    if any(map(op.eq,l,l[1:])):
+        print(args,l)
+    return l
+
 Zs=0
 def area(IDs):
     """Given a list of IDs, return a lower bound and upper bound for the area of the region times 4"""
@@ -239,12 +276,41 @@ def canonical(IDs):
     rots = [sorted(rotate(ID,n) for ID in ids) for n in range(4) for ids in [IDs,list(map(reflect,IDs))]]
     #for x in rots: print(x)
     return tuple(min(rots))
+def canonN(n,sym=True):
+    def canonical2(IDs):
+        """for calculating the area covered exactly once"""
+        nFull = IDs.count(FULL)
+        if nFull>=n:
+            return (FULL,)*n
+        elif nFull==n-1:
+            IDs = tuple(set(IDs)) + (FULL,)*(nFull-1)
+        else:
+            counts=defaultdict(int)
+            for k in IDs:
+                counts[k]+=1
+            IDs=[]
+            for k in counts:
+                for i in range(min(counts[k],n-nFull)):
+                    IDs.append(k)
+            if n-nFull<nFull:
+                for i in range(n-nFull,nFull):
+                    IDs.append(FULL)
+        if sym:
+            rots = [sorted(rotate(ID,th) for ID in ids) for th in range(4) for ids in [IDs,list(map(reflect,IDs))]]
+            return tuple(min(rots))
+        else:
+            return IDs
+    return canonical2
 
 def hedges(IDs):
     return tuple(canonical(merge(*(edges[ID][i] for ID in IDs))) for i in range(4))
 
 seen = set()
 l=[canonical([c]) for r in grids[0] for c in r if c!=-1]
+startingPts = tuple(l)
+import fractalCalc
+eMap = fractalCalc.from_nondet(edges,set(l),canonical)
+"""
 eMap={}
 for IDs in l:
     if IDs not in eMap:
@@ -254,26 +320,66 @@ for IDs in l:
                 seen.add(nxt)
                 l.append(nxt)
 print(len(seen),len(l),len(eMap))
-
+"""
 import sympy
-def var(tup):
-    return sympy.var("x_"+"_".join(map(str,tup)))
-print("constructing a system of linear equations")
-eqns = [
-    var(can)*4 - sum(var(x) for x in eMap[can] if len(x))
-    for can in eMap
-    ]+[var((3,))-1]
+from time import perf_counter
+class Perf():
+    def __init__(self,name):
+        self.name=name
+        self.start = perf_counter()
+    def __enter__(self):
+        print(self.name)
+        self.start = perf_counter()
+    def __exit__(self,*args):
+        delta = perf_counter() - self.start
+        print(self.name,"complete. Time:",delta)
+        return delta
+        
+#def var(tup):
+#    return sympy.var("x_"+"_".join(map(str,tup)))
+var = fractalCalc.var
+with Perf("constructing a system of linear equations"):
+    eqns = [
+        var(can)*4 - sum(var(x) for x in eMap[can] if len(x))
+        for can in eMap
+        ]+[var((FULL,))-1]
 from sympy.solvers.solveset import linsolve
 IDs = list(eMap)
 rIDs = {t:ix for ix,t in enumerate(IDs)}
-print("solving system of linear equations")
-res = linsolve(eqns,list(map(var,IDs)))
+with Perf("solving system of linear equations"):
+    res = linsolve(eqns,list(map(var,IDs)))
 print("number of solutions: ",len(res))
 res=list(res)[0]
 print("The exact answer (a ratio):", sol:=sum(res[rIDs[canonical([c])]] for r in grids[0] for c in r if c!=-1))
 #Should print: 12823413011547414368862997525616691741041579688920794331363953564934456759066858494476606822552437442098640979/877512406035620068631903180662851572553488753575243048137500508983979170248733422547196905684808937723408093
 print("Aproximate value as a decimal:",float(sol))
 #Should print: 14.613369478706703
+
+def calcOverlap(i):
+    """Calculate the area with i overlapping squares (slow)"""
+    can = canonN(i+1)
+    print()
+    print(f"working out the {i}-times overlapping region")
+    eMap2 = fractalCalc.from_nondet(edges,l,can,setify=False)
+    with Perf("creating system of linear equations"):
+        eqns2 = [
+            var(can)*4 - sum(var(x) for x in eMap2[can] if len(x))
+            for can in eMap2
+            ]+[var((FULL,)*j)-(1 if i==j else 0) for j in range(1,i+2)]
+    IDs2 = list(eMap2)
+    rIDs2 = {t:ix for ix,t in enumerate(IDs2)}
+    with Perf("solving system of linear equations"):
+        res2 = linsolve(eqns2,list(map(var,IDs2)))
+    assert len(res2)==1
+    res2=list(res2)[0]
+    print("The exact non-overlapping area (a ratio):", sol2:=sum(res2[rIDs2[can(c)]] for c in startingPts))
+    print("Aproximate value as a decimal:",float(sol2))
+    return (eMap2,IDs2,rIDs2,res2)
+overlap1 = calcOverlap(1)
+# Takes a while to run. See below for results
+# overlap2 = calcOverlap(2)
+# overlap3 = calcOverlap(3) 
+# overlap4 = calcOverlap(4)
 
 def toBitmap(IDs,depth):
     """return a list of byteStrings that can be made into a bitmap"""
@@ -310,4 +416,40 @@ def saveBitmap(depth,fileName):
 for i in [10,13,15,17,19,20]:
     # starting with i=20 is much slower
     print(sum(sqArea([c],i)[0] for r in grids[0] for c in r)/(1<<(2*(i+1))) )
+"""
+
+"""
+working out the 1-times overlapping region
+creating system of linear equations
+creating system of linear equations complete. Time: 0.8558130919700488
+solving system of linear equations
+solving system of linear equations complete. Time: 28.942160924023483
+The exact non-overlapping area (a ratio): 16962637799360785099027471335419220151511764218476912835942824726973528226350841689327698187203341606819204010765988165824780562038671015007009943382620964995725270275795850044026053398538924844543400027671691522915388233/2513371466244324476993631364662566085189790847064880832066101319767961315877203391672625512986104320108351816994597451986760861569174319816374465722439642071633317540592620398893793384970188525908137504707270522414662336
+Aproximate value as a decimal: 6.748957735526329
+r42 = calcOverlap(2)
+
+working out the 2-times overlapping region
+creating system of linear equations
+creating system of linear equations complete. Time: 1.9213243189733475
+solving system of linear equations
+solving system of linear equations complete. Time: 202.45337123802165
+The exact twice-overlapping area (a ratio): 248188519611624634494798691885712426550327439346521643104675906666368587607951343934191652449046490393787214407962965160152841982753402107330473870537275979859401685422933042289106654353974315748918870815482754833363250860544611482992460480489468696187157178362370906927508728689546316608164519676663755042880974854950145918857195087/137119996065977176269530961256058362399838187183681321535977707164934792313492566362031917556921249583929991043635271859038531172299937902252756455754633135342520297579963905781271595866735876793038228012192328012457754482195153911358988778738875771300509483558718724811811878210097845978930479718041923468547326348525536254717132800
+Aproximate value as a decimal: 1.8100096757018962
+
+working out the 3-times overlapping region
+creating system of linear equations
+creating system of linear equations complete. Time: 3.742359835014213
+solving system of linear equations
+solving system of linear equations complete. Time: 879.6345058099832
+The exact thrice-overlapping area (a ratio): 11954988691812348924421578517374791872946991981011682506942915152743147168781977813397820759155941660345551812177208758732839332942336513172063861575683095585110331429871379545171292054776116649782359568056688887054013555723308200137975286863500441587509724360809998320574822235234833721939942257521038092932469850414922042432745919230349860348636797834345463866958406477215878276002617979590403159391512501383219353936828145524356867756034829504161/13855837577977153175488658381635418163917680312798339858009184736660622580935151529828014602093446719459101647270912138422048603781510139084247830706463423980465145198278161209888771447649884529994566511045755591150397962626504145750506336872688394388165887238402570944146814907429650287208371170909317662263920287714830494085023359795625225033738290399304141178599276620181184073340214338695571842298681439370361454159950888650660078924299501568000
+Aproximate value as a decimal: 0.8628124156719283
+calcOverlap(4)
+
+working out the 4-times overlapping region
+creating system of linear equations
+creating system of linear equations complete. Time: 6.635372391028795
+solving system of linear equations
+solving system of linear equations complete. Time: 1466.1643018440227
+The exact 4-times overlapping area (a ratio): 6078325839163185667399651222931460155025913457141788697607714073072854118433834776318067744134969788725456409670750962828069346410112217140391981625849892492443897823197635634530409261025863447785752897047534329348988474019039613404684821329566571999262104572097587388016489426704142011813680213399654848072245724690567003993014391404599493326445920871079926374997694849967742652531640784973642202848379272004560222119592939477132067451272604396958949356293232960876448614101002094953618051092176750989214004200905131249198127131547757912111411266740945838098257/11112051111260538866707226258412895794897119036407788281035815037005928038947903149254922923472041011047095805743862097320388584071706114254389983611512240784899576623243963266786812256103544452899539049932891437882885685669563238991598287358989002781725479058695189435874432609169476455927024823069177239685403474491136831779938145373424368554126779726151485309246923561696667534935250788253007698522731921225352114238288179079194232048283488060462718556189011634482425734250736361209676713526556757295062906047579735645185878067982781296639491067361707950080000
+Aproximate value as a decimal: 0.5470030490593799
 """
